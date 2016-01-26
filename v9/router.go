@@ -52,13 +52,16 @@ func callServer(w *WrapHTTPHandler, lw *loggedResponse, r *http.Request) (elapse
 }
 
 //NewRouter setup and return the router for program
-func NewRouter() *gormux.Router {
+func NewRouter(appC *AppContext) *gormux.Router {
 
 	router := gormux.NewRouter().StrictSlash(true)
 
+    rc := new(RoutesCollection)
+    rc.BuildRoute(appC)
+
 	commonHandlers := alice.New(g.CompressHandler)
 
-	for _, route := range routes {
+	for _, route := range rc.Routes {
 		var handler http.Handler
 
 		handler = route.HandlerFunc

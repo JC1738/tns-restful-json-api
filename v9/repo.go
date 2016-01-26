@@ -1,41 +1,67 @@
 package main
 
-import "fmt"
+import (
+	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
+)
 
-var currentId int
+//TodoRepo mongo db
+type TodoRepo struct {
+	coll *mgo.Collection
+}
 
 var todos Todos
 
-// Give us some seed data
-func init() {
-	RepoCreateTodo(Todo{Name: "Write presentation"})
-	RepoCreateTodo(Todo{Name: "Host meetup"})
+//Init Give us some seed data
+func (r *TodoRepo) Init() {
+	r.RepoCreateTodo(Todo{Name: "Write presentation"})
+	r.RepoCreateTodo(Todo{Name: "Host meetup"})
 }
 
-func RepoFindTodo(id int) Todo {
-	for _, t := range todos {
-		if t.Id == id {
-			return t
-		}
+//RepoFindTodo find
+func (r *TodoRepo) RepoFindTodo(id string) (Todo, error) {
+    result := TodoResource{}
+
+	err := r.coll.FindId(bson.ObjectIdHex(id)).One(&result.Data)
+    if err != nil {
+        //handle err
+        return result.Data, err
+    }
+    
+    return result.Data, err
+}
+
+//RepoAll return all
+func (r *TodoRepo) RepoAll() (TodoCollection, error) {
+	result := TodoCollection{[]Todo{}}
+	err := r.coll.Find(nil).All(&result.Data)
+	if err != nil {
+		return result, err
 	}
-	// return empty Todo if not found
-	return Todo{}
+
+	return result, nil
 }
 
-//this is bad, I don't think it passes race condtions
-func RepoCreateTodo(t Todo) Todo {
-	currentId += 1
-	t.Id = currentId
-	todos = append(todos, t)
+//RepoCreateTodo this is bad, I don't think it passes race condtions
+func (r *TodoRepo) RepoCreateTodo(t Todo) Todo {
+
+    id := bson.NewObjectId()
+	_, err := r.coll.UpsertId(id, t)
+	if err != nil {
+		//handle err
+	}
+
+	t.ID = id
+
 	return t
 }
 
-func RepoDestroyTodo(id int) error {
-	for i, t := range todos {
-		if t.Id == id {
-			todos = append(todos[:i], todos[i+1:]...)
-			return nil
-		}
+//RepoDestroyTodo delete
+func (r *TodoRepo) RepoDestroyTodo(id string) error {
+	err := r.coll.RemoveId(bson.ObjectIdHex(id))
+	if err != nil {
+		return err
 	}
-	return fmt.Errorf("Could not find Todo with id of %d to delete", id)
+
+	return nil	
 }

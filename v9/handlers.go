@@ -6,16 +6,24 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"strconv"
 
 	"github.com/gorilla/mux"
+    "gopkg.in/mgo.v2"
 )
 
-func Index(w http.ResponseWriter, r *http.Request) {
+//AppContext context
+type AppContext struct {
+	db *mgo.Database
+}
+
+
+//Index index route
+func (c *AppContext) Index(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "Welcome!\n")
 }
 
-func TodoIndex(w http.ResponseWriter, r *http.Request) {
+//TodoIndex list todos
+func (c *AppContext) TodoIndex(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(todos); err != nil {
@@ -23,15 +31,17 @@ func TodoIndex(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func TodoShow(w http.ResponseWriter, r *http.Request) {
+//TodoShow display 1 todo
+func (c *AppContext) TodoShow(w http.ResponseWriter, r *http.Request) {
+    repo := TodoRepo{c.db.C("todo")}
+    
 	vars := mux.Vars(r)
-	var todoId int
+	var todoID string
 	var err error
-	if todoId, err = strconv.Atoi(vars["todoId"]); err != nil {
-		panic(err)
-	}
-	todo := RepoFindTodo(todoId)
-	if todo.Id > 0 {
+	todoID = vars["todoId"]
+           
+	todo, err := repo.RepoFindTodo(todoID)
+	if  err != nil {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(todo); err != nil {
@@ -50,12 +60,14 @@ func TodoShow(w http.ResponseWriter, r *http.Request) {
 }
 
 /*
+TodoCreate with
 Test with this curl command:
 
 curl -H "Content-Type: application/json" -d '{"name":"New Todo"}' http://localhost:8080/todos
 
 */
-func TodoCreate(w http.ResponseWriter, r *http.Request) {
+func (c *AppContext) TodoCreate(w http.ResponseWriter, r *http.Request) {
+    repo := TodoRepo{c.db.C("todo")}
 	var todo Todo
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
@@ -72,7 +84,7 @@ func TodoCreate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	t := RepoCreateTodo(todo)
+	t := repo.RepoCreateTodo(todo)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(t); err != nil {
