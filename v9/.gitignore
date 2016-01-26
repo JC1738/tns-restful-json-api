@@ -1,0 +1,10 @@
+*.swp
+*.swo
+.DS_Store
+*~
+main
+main_local
+/static
+/src
+debug
+/.vscode
