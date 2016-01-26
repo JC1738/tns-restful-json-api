@@ -13,13 +13,13 @@ import (
 
 //WrapHTTPHandler to capture status code, wrapping handler
 type WrapHTTPHandler struct {
-	m http.Handler
+	h http.Handler
 }
 
-func (h *WrapHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (wrap *WrapHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	lw := &loggedResponse{ResponseWriter: w, status: 200}
 
-	elapsed := callServer(h, lw, r)
+	elapsed := callServer(wrap, lw, r)
 
 	if lw.status != http.StatusOK {
 		log.Println(fmt.Sprintf("ServeHTTP [%s] %s - %d\n", r.RemoteAddr, r.URL, lw.status))
@@ -39,14 +39,14 @@ func (l *loggedResponse) WriteHeader(status int) {
 }
 
 //created to measure duration of call to ServeHTTP
-func callServer(h *WrapHTTPHandler, lw *loggedResponse, r *http.Request) (elapsed time.Duration) {
+func callServer(w *WrapHTTPHandler, lw *loggedResponse, r *http.Request) (elapsed time.Duration) {
 	start := time.Now()
 
 	defer func() {
 		elapsed = time.Since(start)
 	}()
 
-	h.m.ServeHTTP(lw, r)
+	w.h.ServeHTTP(lw, r)
 
 	return elapsed
 }
@@ -68,7 +68,7 @@ func NewRouter() *gormux.Router {
 			Methods(route.Method).
 			Path(route.Pattern).
 			Name(route.Name).
-			Handler(&WrapHTTPHandler{m: commonHandlers.Then(handler)})
+			Handler(&WrapHTTPHandler{h: commonHandlers.Then(handler)})
 	}
 
 	return router
