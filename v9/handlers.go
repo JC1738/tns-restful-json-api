@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+    "log"
 
 	"github.com/gorilla/mux"
     "gopkg.in/mgo.v2"
@@ -24,11 +25,22 @@ func (c *AppContext) Index(w http.ResponseWriter, r *http.Request) {
 
 //TodoIndex list todos
 func (c *AppContext) TodoIndex(w http.ResponseWriter, r *http.Request) {
+    repo := TodoRepo{c.db.C("todo")}
+    
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(todos); err != nil {
-		panic(err)
-	}
+    
+    todos, err := repo.RepoAll()
+    
+    if err == nil {
+        if err = json.NewEncoder(w).Encode(todos); err != nil {
+		  panic(err)
+	   }
+    } else {
+        log.Println(fmt.Sprintf("error in TodoIndex: %s", err.Error()))
+        panic(err)
+    }
+                   
 }
 
 //TodoShow display 1 todo
@@ -41,7 +53,7 @@ func (c *AppContext) TodoShow(w http.ResponseWriter, r *http.Request) {
 	todoID = vars["todoId"]
            
 	todo, err := repo.RepoFindTodo(todoID)
-	if  err != nil {
+	if  err == nil {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(todo); err != nil {

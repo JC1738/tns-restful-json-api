@@ -1,6 +1,9 @@
 package main
 
 import (
+	"fmt"
+	"log"
+
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -10,8 +13,6 @@ type TodoRepo struct {
 	coll *mgo.Collection
 }
 
-var todos Todos
-
 //Init Give us some seed data
 func (r *TodoRepo) Init() {
 	r.RepoCreateTodo(Todo{Name: "Write presentation"})
@@ -20,15 +21,17 @@ func (r *TodoRepo) Init() {
 
 //RepoFindTodo find
 func (r *TodoRepo) RepoFindTodo(id string) (Todo, error) {
-    result := TodoResource{}
+	result := TodoResource{}
 
 	err := r.coll.FindId(bson.ObjectIdHex(id)).One(&result.Data)
-    if err != nil {
-        //handle err
-        return result.Data, err
-    }
-    
-    return result.Data, err
+	if err != nil {
+		log.Println(fmt.Sprintf("error in RepoFindTodo: %s", err.Error()))
+		return result.Data, err
+	}
+
+	log.Println(fmt.Sprintf("RepoFindTodo: found %s with data %s", id, result.Data))
+
+	return result.Data, nil
 }
 
 //RepoAll return all
@@ -45,7 +48,7 @@ func (r *TodoRepo) RepoAll() (TodoCollection, error) {
 //RepoCreateTodo this is bad, I don't think it passes race condtions
 func (r *TodoRepo) RepoCreateTodo(t Todo) Todo {
 
-    id := bson.NewObjectId()
+	id := bson.NewObjectId()
 	_, err := r.coll.UpsertId(id, t)
 	if err != nil {
 		//handle err
@@ -63,5 +66,5 @@ func (r *TodoRepo) RepoDestroyTodo(id string) error {
 		return err
 	}
 
-	return nil	
+	return nil
 }

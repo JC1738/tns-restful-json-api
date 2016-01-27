@@ -25,25 +25,25 @@ func (rc *RoutesCollection) BuildRoute (appc *AppContext)  {
             "Index",
             "GET",
             "/",
-            appc.Index,
+            appc.Index,  //ok
         },
         Route{
             "TodoIndex",
             "GET",
             "/todos",
-            appc.TodoIndex,
+            appc.TodoIndex,  //ok
         },
         Route{
             "TodoCreate",
             "POST",
             "/todos",
-            appc.TodoCreate,
+            appc.TodoCreate,  //ok
         },
         Route{
             "TodoShow",
             "GET",
             "/todos/{todoId}",
-            appc.TodoShow,
+            appc.TodoShow,  //ok
         },
     }
     
