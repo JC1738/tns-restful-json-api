@@ -33,6 +33,7 @@ func (r *TodoRepo) RepoAll() (TodoCollection, error) {
 	result := TodoCollection{[]Todo{}}
 	err := r.coll.Find(nil).All(&result.Data)
 	if err != nil {
+        log.Println(fmt.Sprintf("error in RepoAll: %s", err.Error()))
 		return result, err
 	}
 
