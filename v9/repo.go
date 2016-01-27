@@ -13,12 +13,6 @@ type TodoRepo struct {
 	coll *mgo.Collection
 }
 
-//Init Give us some seed data
-func (r *TodoRepo) Init() {
-	r.RepoCreateTodo(Todo{Name: "Write presentation"})
-	r.RepoCreateTodo(Todo{Name: "Host meetup"})
-}
-
 //RepoFindTodo find
 func (r *TodoRepo) RepoFindTodo(id string) (Todo, error) {
 	result := TodoResource{}
@@ -51,7 +45,7 @@ func (r *TodoRepo) RepoCreateTodo(t Todo) Todo {
 	id := bson.NewObjectId()
 	_, err := r.coll.UpsertId(id, t)
 	if err != nil {
-		//handle err
+		log.Println(fmt.Sprintf("error in RepoCreateTodo: %s", err.Error()))
 	}
 
 	t.ID = id
@@ -63,6 +57,7 @@ func (r *TodoRepo) RepoCreateTodo(t Todo) Todo {
 func (r *TodoRepo) RepoDestroyTodo(id string) error {
 	err := r.coll.RemoveId(bson.ObjectIdHex(id))
 	if err != nil {
+        log.Println(fmt.Sprintf("error in RepoDestroyTodo: %s", err.Error()))
 		return err
 	}
 
